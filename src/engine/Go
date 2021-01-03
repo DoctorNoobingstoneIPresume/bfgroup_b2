@@ -1,0 +1,223 @@
+#!/bin/bash
+
+# [2020-08-18 >:D<] Happy Wabbit Day !
+#   We attempt to build the engine using "i686-w64-mingw-g++" (from Cygwin for Windows XP).
+#   Please run the following commands from "mintty":
+#     CXX="i686-w64-mingw-g++" CXXFLAGS="-std=gnu++11" ./Go && make
+
+set -e -o pipefail
+#shopt -s exglob
+
+Main ()
+{
+	rm -f Makefile
+	{
+		printf "Generating Makefile...\n{\n"
+		
+		{
+			printf "Config:\n{\n"
+			
+			if [ "${B2_OS}" == "NT" ]; then
+				CXXFLAGS="${CXXFLAGS} -D\"NT=1\""
+			fi
+			
+			local as=("CXX" "CXXFLAGS" "LDFLAGS" "B2_OS")
+			local s
+			for s in "${as[@]}"; do
+				printf "\t%-12s: %s\n" "${s}" "\"${!s}\""
+			done
+			
+			printf "}\n\n"
+		
+		}
+		
+		local asSrcFiles=()
+		{
+			# [2020-08-18] As per the original build.sh file, depending on the toolset, we only select certain source files.
+			#readarray -t asSrcFiles < <(cygwin-find ./ -iname "*.cpp")
+			
+			# [2020-08-18]
+			#asSrcFiles+=(builtins.cpp class.cpp)
+			#asSrcFiles+=(command.cpp compile.cpp constants.cpp cwd.cpp)
+			#asSrcFiles+=(debug.cpp debugger.cpp)
+			#asSrcFiles+=(execcmd.cpp execnt.cpp filent.cpp filesys.cpp frames.cpp function.cpp)
+			#asSrcFiles+=(glob.cpp hash.cpp hcache.cpp hdrmacro.cpp headers.cpp jam.cpp)
+			#asSrcFiles+=(jambase.cpp jamgram.cpp lists.cpp make.cpp make1.cpp md5.cpp mem.cpp modules.cpp)
+			#asSrcFiles+=(native.cpp object.cpp option.cpp output.cpp parse.cpp pathnt.cpp)
+			#asSrcFiles+=(pathsys.cpp regexp.cpp rules.cpp scan.cpp search.cpp jam_strings.cpp)
+			#asSrcFiles+=(subst.cpp sysinfo.cpp timestamp.cpp variable.cpp w32_getreg.cpp)
+			#asSrcFiles+=(modules/order.cpp)
+			#asSrcFiles+=(modules/path.cpp)
+			#asSrcFiles+=(modules/property-set.cpp)
+			#asSrcFiles+=(modules/regex.cpp)
+			#asSrcFiles+=(modules/sequence.cpp)
+			#asSrcFiles+=(modules/set.cpp)
+			
+			# [2020-08-18] Taking the list of source files from build.sh.
+			
+			asSrcFiles+=("builtins.cpp")
+			asSrcFiles+=("class.cpp")
+			asSrcFiles+=("command.cpp")
+			asSrcFiles+=("compile.cpp")
+			asSrcFiles+=("constants.cpp")
+			asSrcFiles+=("cwd.cpp")
+			asSrcFiles+=("debug.cpp")
+			asSrcFiles+=("debugger.cpp")
+			asSrcFiles+=("execcmd.cpp")
+			asSrcFiles+=("filesys.cpp")
+			asSrcFiles+=("frames.cpp")
+			asSrcFiles+=("function.cpp")
+			asSrcFiles+=("glob.cpp")
+			asSrcFiles+=("hash.cpp")
+			asSrcFiles+=("hcache.cpp")
+			asSrcFiles+=("hdrmacro.cpp")
+			asSrcFiles+=("headers.cpp")
+			asSrcFiles+=("jam.cpp")
+			asSrcFiles+=("jamgram.cpp")
+			asSrcFiles+=("lists.cpp")
+			asSrcFiles+=("make.cpp")
+			asSrcFiles+=("make1.cpp")
+			asSrcFiles+=("md5.cpp")
+			asSrcFiles+=("mem.cpp")
+			asSrcFiles+=("modules.cpp")
+			asSrcFiles+=("native.cpp")
+			asSrcFiles+=("object.cpp")
+			asSrcFiles+=("option.cpp")
+			asSrcFiles+=("output.cpp")
+			asSrcFiles+=("parse.cpp")
+			asSrcFiles+=("pathsys.cpp")
+			asSrcFiles+=("regexp.cpp")
+			asSrcFiles+=("rules.cpp")
+			asSrcFiles+=("scan.cpp")
+			asSrcFiles+=("search.cpp")
+			asSrcFiles+=("jam_strings.cpp")
+			asSrcFiles+=("startup.cpp")
+			asSrcFiles+=("subst.cpp")
+			asSrcFiles+=("sysinfo.cpp")
+			asSrcFiles+=("timestamp.cpp")
+			asSrcFiles+=("variable.cpp")
+			asSrcFiles+=("w32_getreg.cpp")
+			
+			asSrcFiles+=("modules/order.cpp")
+			asSrcFiles+=("modules/path.cpp")
+			asSrcFiles+=("modules/property-set.cpp")
+			asSrcFiles+=("modules/regex.cpp")
+			asSrcFiles+=("modules/sequence.cpp")
+			asSrcFiles+=("modules/set.cpp")
+			
+			if [ "${B2_OS}" == "NT" ]; then
+				asSrcFiles+=("filent.cpp")
+				asSrcFiles+=("pathnt.cpp")
+				asSrcFiles+=("execnt.cpp")
+			else
+				asSrcFiles+=("fileunix.cpp")
+				asSrcFiles+=("pathunix.cpp")
+				asSrcFiles+=("execunix.cpp")
+			fi
+		}
+		
+		local sBuildFolder="_Work/"
+		{
+			sBuildFolder="${sBuildFolder%/}"
+		}
+		
+		mkdir -p "${sBuildFolder}/"
+		mkdir -p "${sBuildFolder}/modules/"
+		
+		local sSep="\\\\\n\t"
+		
+		local asObjFiles=()
+		{
+			printf "%s/bog2.exe:\\\\\n" "${sBuildFolder}" >> Makefile
+			local sSrcFile
+			for sSrcFile in "${asSrcFiles[@]}"; do
+				sSrcFile="${sSrcFile#./}"
+				local sObjFile="${sBuildFolder}/${sSrcFile}.o"
+				
+				printf "    %-32s \\\\\n" "${sObjFile}" >> Makefile
+			done
+			
+			# [2021-01-02]
+			#printf "\n\t%s  %s  \$+  -o \"\$@\"" "\"${CXX}\"" "${LDFLAGS}" >> Makefile
+			#
+			#printf "\n\n" >> Makefile
+			#
+			local sFormat="$(printf "%s%s%s%s%s" "\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t\n")"
+			printf "\n${sFormat}\n\n" "\"${CXX}\"" "${LDFLAGS}" "\$+" "-o \"\$@\"" >> Makefile
+		}
+		
+		# [2020-08-18] Let us use HEREDOC (https://stackoverflow.com/a/1168084/13323476 - answer to https://stackoverflow.com/questions/1167746/how-to-assign-a-heredoc-value-to-a-variable-in-bash):
+		#
+		# [2021-01-02]
+		#printf "%s\n\t%s\n\n" "${sBuildFolder}/%.cpp.o: %.cpp" "\"${CXX}\" \\\\\n\t ${CXXFLAGS}  -c \"$<\" -o \"\$@\"" >> Makefile
+		#
+		
+		local sFormat="$(printf "%s%s%s%s%s%s" "%s\n" "\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t%s \\\\\n" "\t\t\n")"
+		#printf "[%s]\n" "${sFormat}"
+		
+			#"%s\n\t%s${sSep}%s\n\t%s\n\t%s\n\t%s\n\n" \
+		printf \
+			"${sFormat}" \
+			"${sBuildFolder}/%.cpp.o: %.cpp" \
+			"\"${CXX}\"" \
+			"${CXXFLAGS}" \
+			"-c \"$<\"" \
+			"-o \"\$@\"" \
+			>> Makefile
+
+		#cat Makefile
+		
+#		echo "$(cat <<'END_HEREDOC'
+#Work/%.cpp.o: %.cpp
+#	"$(CXX)" $(CXXFLAGS) -c "$<" -o "$@"
+#
+#END_HEREDOC
+#)" >> Makefile
+		
+		#cat Makefile; echo
+		
+		{
+			local sSrcFile
+			for sSrcFile in "${asSrcFiles[@]}"; do
+				sSrcFile="${sSrcFile#./}"
+				local sObjFile="${sBuildFolder}/${sSrcFile}.o"
+				
+				#printf "\t%-32s: %-32s\n" "${sObjFile}" "${sSrcFile}"
+				
+				#i686-w64-mingw32-g++ -std="gnu++11" -M -MM -MF "${sBuildFolder}/${sSrcFile}.dep" -MT "${sBuildFolder}/${sSrcFile}.o" "${sSrcFile}"
+				
+				#local sResult=$("${CXX}" ${CXXFLAGS} -E -M -MM -MF "/dev/stdout" -MT "${sBuildFolder}/${sSrcFile}.o" "${sSrcFile}")
+				
+				# [2021-01-01] TODO: Faster !
+				#local sCommand="$(printf "%s ${sSep}%s ${sSep}-E -M -MM -MF \"/dev/stdout\" ${sSep}-MT %-36s %-18s ${sSep}\n" "\"${CXX}\"" "${CXXFLAGS}" "\"${sBuildFolder}/${sSrcFile}.o\"" "\"${sSrcFile}\"")"
+				#
+				# [2021-01-02]
+				#local sCommand="$(printf "%s ${sSep}%s ${sSep}   -M -MM -MF \"/dev/stdout\" ${sSep}-MT %-36s %-18s ${sSep}\n" "\"${CXX}\"" "${CXXFLAGS}" "\"${sBuildFolder}/${sSrcFile}.o\"" "\"${sSrcFile}\"")"
+				#
+				#                 printf "%s\n" "${sCommand}"
+				#local sResult="$(printf "%s\n" "${sCommand}" | xtimeq sh)"
+				#
+				local sFormat="$(printf "%s%s%s%s%s%s" "%s \\\\\n" "\t%s \\\\\n" "\t%s \\\\\n" "\t%s \\\\\n" "\t%s \\\\\n" "\t\n")"
+				local sCommand="$(printf "${sFormat}" "\"${CXX}\"" "${CXXFLAGS}" "-MM" "-MT \"${sBuildFolder}/${sSrcFile}.o\"" "-E \"${sSrcFile}\"")"
+				                 printf "%s\n" "${sCommand}"
+				local sResult="$(printf "%s\n" "${sCommand}" | sh)"
+				
+				if [ "${sResult}" == "" ]; then echo "Nothing !"; exit 7; fi
+				
+				printf "%s\n\n" "${sResult}" >> Makefile
+				#cat Makefile; echo
+				
+				#break
+			done
+		}
+		
+		printf "}\n\n\n"
+	}
+	
+	#less Makefile
+	
+	#make -f Makefile
+}
+
+#Main "$@" 2>&1 | xtimeq tee "_go"
+Main "$@"

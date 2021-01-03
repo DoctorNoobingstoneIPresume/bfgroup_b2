@@ -32,33 +32,35 @@
 #include <ctype.h>
 
 #ifdef OS_NT
-#include <windows.h>
-#ifndef FSCTL_GET_REPARSE_POINT
-/* MinGW's version of windows.h is missing this, so we need
- * to include winioctl.h directly
- */
-#include <winioctl.h>
-#endif
+    #include <windows.h>
+    #ifndef FSCTL_GET_REPARSE_POINT
+        /* MinGW's version of windows.h is missing this, so we need
+         * to include winioctl.h directly
+         */
+        #include <winioctl.h>
+    #endif
 
-/* With VC8 (VS2005) these are not defined:
- *   FSCTL_GET_REPARSE_POINT  (expects WINVER >= 0x0500 _WIN32_WINNT >= 0x0500 )
- *   IO_REPARSE_TAG_SYMLINK   (is part of a separate Driver SDK)
- * So define them explicitly to their expected values.
- */
-#ifndef FSCTL_GET_REPARSE_POINT
-# define FSCTL_GET_REPARSE_POINT 0x000900a8
-#endif
-#ifndef IO_REPARSE_TAG_SYMLINK
-# define IO_REPARSE_TAG_SYMLINK	(0xA000000CL)
-#endif
+    /* With VC8 (VS2005) these are not defined:
+     *   FSCTL_GET_REPARSE_POINT  (expects WINVER >= 0x0500 _WIN32_WINNT >= 0x0500 )
+     *   IO_REPARSE_TAG_SYMLINK   (is part of a separate Driver SDK)
+     * So define them explicitly to their expected values.
+     */
+    #ifndef FSCTL_GET_REPARSE_POINT
+        #define FSCTL_GET_REPARSE_POINT 0x000900a8
+    #endif
+    #ifndef IO_REPARSE_TAG_SYMLINK
+        #define IO_REPARSE_TAG_SYMLINK	(0xA000000CL)
+    #endif
 
-#include <io.h>
-#if !defined(__BORLANDC__)
-#define dup _dup
-#define dup2 _dup2
-#define open _open
-#define close _close
-#endif /* __BORLANDC__ */
+    #include <io.h>
+    #if !defined(__BORLANDC__)
+        #define dup   _dup
+        #define dup2  _dup2
+        #define open  _open
+        #define close _close
+    #endif /* __BORLANDC__ */
+#else /* OS_NT */
+    #include <unistd.h>
 #endif /* OS_NT */
 
 #if defined(USE_EXECUNIX)
